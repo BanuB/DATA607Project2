@@ -1,0 +1,140 @@
+---
+title: "Project2DATA607DataSet3"
+author: "Banu Boopalan"
+date: "11/4/2019"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: hide
+  ioslides_presentation: default
+  pdf_document: default
+  slidy_presentation: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(stringr)
+library(tidyr)
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(data.table)
+library(readr)
+library(knitr)
+#Install KableExtra package and use that
+library(kableExtra)
+```
+
+## Project 2 :DataSet3 Analysis. This dataset has Year data spread in a wide format. So, we can transform and create a long format.
+
+Your task is to: For each of the three chosen datasets: • Create a .CSV file (or optionally, a MySQL database!) that includes all of the information included in the dataset.  You’re encouraged to use a “wide” structure similar to how the information appears in the discussion item, so that you can practice tidying and transformations as described below. 
+
+DATASET SOURCE: UN World Populalation Dataset
+Suggested citation: United Nations, Department of Economic and Social Affairs, Population Division (2019). World Population Prospects 2019, Online Edition. Rev. 1.							
+
+
+```{r}
+myurl <- "https://raw.githubusercontent.com/BanuB/DATA607Project2/master/WorldTOTAL_POPULATION_BOTH_SEXESFinal.csv"
+csvdata4 <- read.csv(file=myurl, header=TRUE,sep=",",stringsAsFactors = FALSE,na.strings=c("NA"))
+filename<- "WorldPopulationDataset3.csv"
+```
+
+## After reading in data, keep only some records and certain coloums using subset
+
+
+```{r}
+mydataset <- subset(csvdata4, csvdata4$X.4 == 'Country/Area' |csvdata4$X.4 == 'Type' )
+str(mydataset)
+head(mydataset, n=10)
+
+mydataset1 <- mydataset %>%
+  select(X.1,X.55:X.75)
+str(mydataset1)
+head(mydataset1)
+```
+
+
+## Show one variable Y2020 only
+
+```{r}
+mydataset1[22]
+```
+
+## Rename columns and keep only 2000-2020 for reporting and drop the first row to keep only values we need
+
+
+```{r}
+names(mydataset1)[1] <- "Country"
+names(mydataset1)[2] <- "Y2000"
+names(mydataset1)[3] <- "Y2001"
+names(mydataset1)[4] <- "Y2002"
+names(mydataset1)[5] <- "Y2003"
+names(mydataset1)[6] <- "Y2004"
+names(mydataset1)[7]<- "Y2005"
+names(mydataset1)[8] <- "Y2006"
+names(mydataset1)[9] <- "Y2007"
+names(mydataset1)[10] <- "Y2008"
+names(mydataset1)[11] <- "Y2009"
+names(mydataset1)[12] <- "Y2010"
+names(mydataset1)[13] <- "Y2011"
+names(mydataset1)[14] <- "Y2012"
+names(mydataset1)[15] <- "Y2013"
+names(mydataset1)[16] <- "Y2014"
+names(mydataset1)[17] <- "Y2015"
+names(mydataset1)[18] <- "Y2016"
+names(mydataset1)[19] <- "Y2017"
+names(mydataset1)[20] <-"Y2018"
+names(mydataset1)[21] <- "Y2019"
+names(mydataset1)[22] <- "Y2020"
+
+mydataset2 <- mydataset1  %>% filter(!str_detect(Country, 'Region'))
+str(mydataset2)
+
+```
+
+## Run function Check to remove space and convert to numeric
+
+
+```{r}
+check<-function(x){
+  return(as.numeric(str_replace_all(x, "\\s+", "")))
+}
+mydataset2[2:22] <- apply(mydataset2[2:22], MARGIN=2, FUN=check)
+str(mydataset2)
+```
+
+## Gather and Arrange long dataset
+
+
+```{r}
+WPmydataset<- mydataset2 %>% gather("Year", "Population", Y2000:Y2020)
+WPmydataset %>% arrange(Country,Year,Population) 
+head(WPmydataset)
+```
+
+## Filter only top 10 countries for Y2020
+
+
+```{r}
+WP1 <- arrange(WPmydataset, Year)
+WP10 <- WP1  %>% filter(Year == 'Y2020')
+WP2 <- WP10 %>% arrange(desc(Population)) 
+WP3 <- head(WP2, n=10)
+
+WP3 %>% kable() %>% kable_styling()
+```
+
+## Plot population using ggplot for top countries
+
+
+```{r}
+ggplot(WP3, aes(x = reorder(Country, -Population), y = Population, fill = Country)) +
+  geom_bar(stat = "identity") +
+    xlab("Country") +
+  ylab("Population") +
+  ggtitle("Top Global Population (in thousands)") +
+  theme(axis.text.x = element_text(angle = 45,hjust = 1)) + 
+  theme(plot.title = element_text(hjust = 0.5))
+
+```

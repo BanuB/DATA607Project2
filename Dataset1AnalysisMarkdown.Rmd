@@ -1,0 +1,106 @@
+---
+title: "Project2DATA607DataSet1"
+author: "Banu Boopalan"
+date: "11/4/2019"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: hide
+  ioslides_presentation: default
+  pdf_document: default
+  slidy_presentation: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(stringr)
+library(tidyr)
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(data.table)
+library(readr)
+library(knitr)
+#Install KableExtra package and use that
+library(kableExtra)
+library(reshape2)
+
+```
+
+## Project 2 :DataSet1 Analysis. This dataset has Year data spread in a wide format. Also it has some special characters and formats to be cleaned up.
+
+Your task is to: For each of the three chosen datasets: • Create a .CSV file (or optionally, a MySQL database!) that includes all of the information included in the dataset.  You’re encouraged to use a “wide” structure similar to how the information appears in the discussion item, so that you can practice tidying and transformations as described below. 
+
+DATASET SOURCE: US Census Data
+URL link: https://www.census.gov/data/tables/time-series/demo/income-poverty/cps-pinc/pinc-06.2018.html						
+
+
+```{r}
+myurl <- "https://raw.githubusercontent.com/BanuB/DATA607Project2/master/census2femalecsv1.csv"
+csvdata2  <- read.csv(file=myurl, header=TRUE,sep=",",stringsAsFactors = FALSE,na.strings=c("NA"))
+filename<- "CensusFemaleDataset1.csv"
+```
+
+## After reading in data, view file
+
+
+```{r}
+str(csvdata2)
+raw.tablefemale <- data.frame(csvdata2)
+names(raw.tablefemale)[1]<-"Occupation"
+str(raw.tablefemale)
+```
+
+
+## tidy data and rename columns
+
+```{r}
+raw.tablefemale1 <- raw.tablefemale %>%
+  mutate(Occupation = gsub("[[:punct:]]", "", Occupation)) 
+
+raw.tablefemale2 <- raw.tablefemale1 %>%
+  mutate(Occupation = gsub("[^a-zA-Z]","", Occupation))
+raw.tablefemale2  %>% kable() %>% kable_styling()
+
+
+```
+
+## arrange data and order
+
+
+```{r}
+melt.tablefemale <- melt(raw.tablefemale2,id.vars="Occupation",variable.name = "Earnings", value.name = "Count")
+melt.tablefemale3 <- subset (melt.tablefemale, Count != "(B)")
+#head(melt.tablefemale,n=200)
+str(melt.tablefemale3)
+head(melt.tablefemale3,n=200) %>% kable() %>% kable_styling()
+
+check<-function(x){
+  return(as.numeric(gsub("[[:punct:]]","",x)))
+    #gsub("[[:punct:]]", "",as.character(x))))
+}
+melt.tablefemale3[3] <- lapply(melt.tablefemale3[3],FUN=check)
+str(melt.tablefemale3)
+head(melt.tablefemale3,n=200) %>% kable() %>% kable_styling()
+#melt.tablefemale3$Count
+```
+
+## filter by few occupations
+
+
+```{r }
+melt.tablefemale2 <- melt.tablefemale3 %>% filter(Earnings == "Median.earnings" | Earnings == "Mean.earnings" ) %>%  arrange(Earnings,desc(Count))
+myselect <- c('Chief','Doctors','Nurses','FirefightersandPolice')
+melt.tablefemale4 <- melt.tablefemale2   %>% filter(str_detect(Occupation, myselect) == TRUE)
+head(melt.tablefemale2,n=200) %>% kable() %>% kable_styling()
+melt.tablefemale4  %>% kable() %>% kable_styling() 
+
+
+
+wptable4 <- head(melt.tablefemale4, n=30)
+
+
+```
+
+
